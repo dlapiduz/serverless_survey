@@ -1,5 +1,14 @@
 <template>
   <div id="app">
+
+
+    <div class="jumbotron">
+      <h1 class="display-4">Serverless Security Analyzer</h1>
+      <p class="lead">Serverless security is usually associated with application security but it is much more than that.</p>
+
+    </div>
+
+
     <div class="row">
       <div class="col-8">
         <div id="surveyContainer" style="display:inline-block;width:100%;">
@@ -7,6 +16,14 @@
         </div>
       </div>
       <div class="col-4">
+        <p>
+          This scoring tool will help you find areas where you are doing great and areas for improvement.
+          The goal is not to be completely exhaustive but to help find overlooked spots.
+        </p>
+        <p>
+          For the purposes of this tool, serverless not only means function as as service (FaaS like AWS Lambda or Google Functions) but plaform services where you don't have to manage the "instance".
+          For example AWS DynamoDB is considered serverless and RDS is not.
+        </p>
       </div>
     </div>
   </div>
@@ -102,6 +119,10 @@ export default {
 
 <style>
 body {
-  padding: 10px;
+  padding: 2rem;
+}
+
+.jumbotron {
+  padding: 2rem;
 }
 </style>
