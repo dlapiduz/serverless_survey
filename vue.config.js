@@ -4,7 +4,7 @@ module.exports = {
     config
       .plugin('html')
       .tap((args) => {
-        args[0].title = 'Serverless Security Analyzer';
+        args[0].title = 'Serverless Security Assessment';
         return args;
       });
   }

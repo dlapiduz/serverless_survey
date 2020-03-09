@@ -1,9 +1,7 @@
 <template>
   <div id="app">
-
-
     <div class="jumbotron">
-      <h1 class="display-4">Serverless Security Analyzer</h1>
+      <h1 class="display-4">Serverless Security Assessment</h1>
       <p class="lead">Serverless security is usually associated with application security but it is much more than that.</p>
 
     </div>
@@ -17,8 +15,8 @@
       </div>
       <div class="col-4">
         <p>
-          This scoring tool will help you find areas where you are doing great and areas for improvement.
-          The goal is not to be completely exhaustive but to help find overlooked spots.
+          This scoring tool will help you find areas where you are doing great and where you need improvement.
+          The goal is not to be exhaustive but to help find overlooked spots. Use at your own risk.
         </p>
         <p>
           For the purposes of this tool, serverless not only means function as as service (FaaS like AWS Lambda or Google Functions) but plaform services where you don't have to manage the "instance".
