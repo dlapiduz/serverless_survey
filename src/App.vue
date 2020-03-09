@@ -1,28 +1,40 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+
+    <div id="surveyContainer" style="display:inline-block;width:100%;">
+      <survey :survey="survey"></survey>
+    </div>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import * as SurveyVue from "survey-vue";
+import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+SurveyVue.StylesManager.applyTheme("bootstrap");
+SurveyVue.defaultBootstrapCss.navigationButton = "btn btn-primary";
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+  },
+  data() {
+    var surveyJSON = {
+    };
+    
+    
+    var model = new SurveyVue.Model(surveyJSON);
+    
+    return {
+      survey: model,
+    };
   }
 }
+
+
+
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
 </style>
