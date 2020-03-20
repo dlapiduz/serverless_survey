@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Serverless Security Assessment</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="./index.css">
+
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div class="container"></div>
+    <div id="app">
+      <div class="jumbotron">
+        <h1 class="display-4">Serverless Security Assessment</h1>
+        <p class="lead">Serverless security is usually associated with application security but it is much more than that.</p>
+      </div>
+
+      <div class="row">
+        <div class="col-8">
+          <div id="surveyElement" style="display:inline-block;width:100%;">
+          </div>
+        </div>
+        <div class="col-4">
+          <div id="circle">
+            <div class="score"><strong>0</strong>/130 <br/> Score</div>
+          </div>
+
+          <p>
+            This scoring tool will help you find areas where you are doing great and where you need improvement.
+            The goal is not to be exhaustive but to help find overlooked spots. Use at your own risk.
+          </p>
+          <p>
+            For the purposes of this tool, serverless not only means function as as service (FaaS like AWS Lambda or Google Functions) but plaform services where you don't have to manage the "instance".
+            For example AWS DynamoDB is considered serverless and RDS is not.
+          </p>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <script
+    src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+    crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://surveyjs.azureedge.net/1.5.16/survey.jquery.js"></script>
+    <script src="js/circle-progress.min.js"></script>
+    <script src="js/index.js"></script>
+
+  </body>
+</html>
