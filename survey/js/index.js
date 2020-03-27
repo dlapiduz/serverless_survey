@@ -65,6 +65,17 @@ var surveyJSON = {
 
               },
               {
+                type: "radiogroup",
+                choices: [
+                  {text: "Yes", value: 10},
+                  {text: "No", value: NO_POINT},
+                ],
+                isRequired: true,
+                name: "iam-execution-profile",
+                title: "Do you use a custom IAM role for the execution environment?"
+
+              },
+              {
                   type: "radiogroup",
                   choices: [
                     {text: "Yes", value: 10},
@@ -173,12 +184,23 @@ var surveyJSON = {
                   type: "radiogroup",
                   choices: [
                     {text: "Yes, with Cloudformation Stack Drift Detection", value: 10},
-                    {text: "Yes, with Cloudformation Stack Drift Detection", value: 11},
+                    {text: "Yes, with another security tool", value: 11},
                     {text: "No", value: NO_POINT},
                   ],
                   isRequired: true,
                   name: "drift",
-                  title: "Do you check for drift on your fuction or containers?"
+                  title: "Do you check for drift on your fuctions or containers?"
+              },
+              {
+                type: "radiogroup",
+                choices: [
+                  {text: "Yes", value: 10},
+                  {text: "No", value: NO_POINT},
+                ],
+                isRequired: true,
+                name: "runtime-upgrade",
+                title: "Do you have an automated way to upgrade the runtime or engine if it gets deprecated?"
+
               },
               {
                   type: "radiogroup",
@@ -234,10 +256,18 @@ survey
     .add(function (sender) {
       var old_score = score/130;
       score = calculateScore(sender.data);
-
       $("#circle .score strong").html(score);
-
       $("#circle").circleProgress({ value: score/130, animationStartValue: old_score });
+    });
+
+survey
+    .onComplete
+    .add(function (sender, options) {
+        // var xhr = new XMLHttpRequest();
+        // xhr.open("POST", "YourServiceForStoringSurveyResultsAsJSON_URL");
+        // xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        // xhr.send(JSON.stringify(sender.data));
+        console.log(sender.data);
     });
 
 $("#surveyElement").Survey({model: survey});
