@@ -1,0 +1,367 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  secureapp survey
+
+  Response API and front end
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+  Api:
+    EndpointConfiguration: REGIONAL
+    Cors: "'*.secureapp.io'"
+
+Parameters:
+  FunctionStage:
+    Type: String
+    Description: Stage for lambda app
+    Default: "Prod"
+  Prefix:
+    Type: String
+    Description: Prefix for Resources
+    Default: "sacf"
+  CertificateArn:
+    Type: String
+    Description: Arn for the cloudfront certificate
+    Default: ""
+  DynamoPrefixListId:
+    Type: String
+    Description: Prefix list for DynamoDB
+    Default: "pl-02cd2c6b"
+  HostedZoneName:
+    Type: String
+    Description: Hosted Zone Name for main domain
+    Default: "secureapp.io."
+  ResponseApiKey:
+    Type: String
+    Description: Key for the Gateway API
+    Default: ""
+  HostedZoneId:
+    Type: String
+    Description: Hosted Zone ID
+    Default: ""
+  LogBucket:
+    Type: String
+    Description: LogBucket
+    Default: ""
+
+Resources:
+  ResponseStoreFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: api/
+      Handler: app.store
+      Runtime: python3.8
+      Events:
+        ResponseStore:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /api/response
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+      Role: !GetAtt ResponseLambdaRole.Arn
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Enabled: true
+      StageKeys:
+        - RestApiId:
+            !Ref ServerlessRestApi
+          StageName:
+            !Ref FunctionStage
+      Value:
+        !Ref ResponseApiKey
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+        - ApiId:
+            !Ref ServerlessRestApi
+          Stage:
+            !Ref FunctionStage
+  ApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: "API_KEY"
+      UsagePlanId: !Ref ApiUsagePlan
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.1.0/24
+      VpcId:
+        Ref: Vpc
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.0.2.0/24
+      VpcId:
+        Ref: Vpc
+  PublicSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1d
+      CidrBlock: 10.0.21.0/24
+      VpcId:
+        Ref: Vpc
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: Vpc
+      InternetGatewayId:
+        Ref: InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: Vpc
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+  SubnetRouteTableAssociationPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PublicSubnetD
+      RouteTableId:
+        Ref: PublicRouteTable
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: Vpc
+  SubnetRouteTableAssociationPrivateA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnetA
+      RouteTableId:
+        Ref: PrivateRouteTable
+  SubnetRouteTableAssociationPrivateB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnetB
+      RouteTableId:
+        Ref: PrivateRouteTable
+
+  LambdaSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub ${Prefix}-prod-lambda
+      GroupDescription: Allow all outbound traffic, no inbound
+      SecurityGroupIngress: []
+      SecurityGroupEgress: []
+      VpcId:
+        Ref: Vpc
+  LambdaSecurityGroupIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      IpProtocol: -1
+      SourceSecurityGroupId:
+        Ref: LambdaSecurityGroup
+      GroupId:
+        Ref: LambdaSecurityGroup
+  LambdaSecurityGroupEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      IpProtocol: -1
+      DestinationSecurityGroupId:
+        Ref: LambdaSecurityGroup
+      GroupId:
+        Ref: LambdaSecurityGroup
+  LambdaSecurityGroupEgressDynamo:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      IpProtocol: -1
+      DestinationPrefixListId: !Ref DynamoPrefixListId
+      GroupId:
+        Ref: LambdaSecurityGroup
+
+  DynamoVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      RouteTableIds:
+        - Ref: PrivateRouteTable
+      VpcId:
+        Ref: Vpc
+      ServiceName: "com.amazonaws.us-east-1.dynamodb"
+
+
+  ResponseTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Responses
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ResponseLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ResponseLambda
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBWriteAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/*:*:*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  'Fn::GetAtt': [ ResponseTable, Arn ]
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DetachNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                Resource: "*"
+
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: survey.secureapp.io
+      WebsiteConfiguration:
+        ErrorDocument: "error.html"
+        IndexDocument: "index.html"
+
+  CloudfrontDistro:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - survey.secureapp.io
+        CacheBehaviors:
+          - AllowedMethods: [ "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT" ]
+            Compress: false
+            DefaultTTL: 0
+            ForwardedValues:
+              QueryString: true
+              Headers:
+              - Access-Control-Request-Headers
+              - Access-Control-Request-Method
+              - Origin
+              - Authorization
+              - X-API-Key
+              Cookies:
+                Forward: all
+            TargetOriginId: "ResponseAPI"
+            ViewerProtocolPolicy: "redirect-to-https"
+            PathPattern: "/api/*"
+        DefaultCacheBehavior:
+          Compress: true
+          DefaultTTL: 300
+          ForwardedValues:
+            QueryString: false
+          TargetOriginId: "S3Origin"
+          ViewerProtocolPolicy: "redirect-to-https"
+        DefaultRootObject: "index.html"
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Logging:
+          Bucket: !Ref LogBucket
+          Prefix: "sacf"
+        Origins:
+          - DomainName: "survey.secureapp.io.s3.amazonaws.com"
+            Id: "S3Origin"
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - CustomOriginConfig:
+              OriginProtocolPolicy: "https-only"
+              OriginSSLProtocols:
+              - "TLSv1.2"
+            DomainName: !Sub "${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com"
+            OriginPath: !Sub "/${FunctionStage}"
+            Id: "ResponseAPI"
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          MinimumProtocolVersion: "TLSv1.2_2018"
+          SslSupportMethod: "sni-only"
+
+  R53ARecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt CloudfrontDistro.DomainName
+        HostedZoneId: !Ref HostedZoneId
+      HostedZoneName: !Ref HostedZoneName
+      Name: "survey.secureapp.io"
+      Type: "A"
+
+  R53AAAARecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt CloudfrontDistro.DomainName
+        HostedZoneId: !Ref HostedZoneId
+      HostedZoneName: !Ref HostedZoneName
+      Name: "survey.secureapp.io"
+      Type: "AAAA"
+
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  ResponseStoreApi:
+    Description: "API Gateway endpoint URL for Prod stage for Response function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${FunctionStage}/response/"
+  ResponseStoreFunction:
+    Description: "Response Lambda Function ARN"
+    Value: !GetAtt ResponseStoreFunction.Arn

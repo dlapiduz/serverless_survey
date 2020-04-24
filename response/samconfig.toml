@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "secureapp"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-y0p1483ukj6h"
+s3_prefix = "secureapp"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
