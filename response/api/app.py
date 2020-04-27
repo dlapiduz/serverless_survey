@@ -51,4 +51,8 @@ def store(event, context):
             "body": json.dumps({"message": "Incorrect input"})
         }
 
+    response['headers'] = {
+        "access-control-allow-origin": "*",
+        "access-control-allow-headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token"
+    }
     return response

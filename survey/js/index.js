@@ -3,6 +3,7 @@ Survey.StylesManager.applyTheme("bootstrap");
 Survey.defaultBootstrapCss.navigationButton = "btn btn-primary";
 
 const NO_POINT = 0;
+const TOTAL_SCORE = 180;
 
 var score = 0;
 
@@ -19,8 +20,9 @@ var surveyJSON = {
                       {text: "Apex", value: 10},
                       {text: "Chalice", value: 11},
                       {text: "Claudia.js", value: 12},
-                      {text: "Serverless Framework", value: 13},
-                      {text: "Sparta", value: 14},
+                      {text: "Serverless Application Model", value: 13},
+                      {text: "Serverless Framework", value: 14},
+                      {text: "Sparta", value: 15},
                       {text: "None", value: NO_POINT},
                   ],
                   hasOther: true,
@@ -28,6 +30,21 @@ var surveyJSON = {
                   name: "frameworkUsing",
                   title: "Do you use a serverless application framework?",
               },
+              {
+                type: "radiogroup",
+                choices: [
+                  {text: "API Gateway", value: 10},
+                  {text: "Application Load Balancer", value: 11},
+                  {text: "Cloud Service (DynamoDB/S3/CloudWatch/etc)", value: 12},
+                  {text: "Partner Integration", value: 13},
+                  {text: "Manually", value: 1},
+                ],
+                hasOther: true,
+                isRequired: true,
+                name: "invocations",
+                title: "When using functions, How do you invoke them?"
+
+            },
               {
                   type: "radiogroup",
                   choices: [
@@ -51,18 +68,6 @@ var surveyJSON = {
                   name: "iam-pipeline",
                   title: "Do you have a limited IAM role dedicated for the pipeline?",
                   visibleIf: "{cd} != 'Manually'"
-              },
-              {
-                  type: "radiogroup",
-                  choices: [
-                    {text: "Yes", value: 10},
-                    {text: "No", value: NO_POINT},
-                  ],
-                  isRequired: true,
-                  name: "iam",
-                  title: "For Lambda/Functions, Do you have an IAM role with limited access to just update the code?",
-                  visibleIf: "{cd} = 'Manually'"
-
               },
               {
                 type: "radiogroup",
@@ -140,8 +145,8 @@ var surveyJSON = {
                     {text: "No", value: NO_POINT},
                   ],
                   isRequired: true,
-                  name: "api-gw",
-                  title: "Do you use an API Gateway?"
+                  name: "waf",
+                  title: "Do you use a WAF for your external facing endpoints?"
               },
               {
                   type: "radiogroup",
@@ -199,7 +204,7 @@ var surveyJSON = {
                 ],
                 isRequired: true,
                 name: "runtime-upgrade",
-                title: "Do you have an automated way to upgrade the runtime or engine if it gets deprecated?"
+                title: "Do you have an automated process to upgrade the runtime or engine if it gets deprecated?"
 
               },
               {
@@ -254,21 +259,46 @@ window.survey = new Survey.Model(surveyJSON);
 survey
     .onValueChanged
     .add(function (sender) {
-      var old_score = score/130;
+      var old_score = score/TOTAL_SCORE;
       score = calculateScore(sender.data);
       $("#circle .score strong").html(score);
-      $("#circle").circleProgress({ value: score/130, animationStartValue: old_score });
+      $("#report span.score").html(score);
+      $("#circle").circleProgress({ value: score/TOTAL_SCORE, animationStartValue: old_score });
     });
 
 survey
     .onComplete
     .add(function (sender, options) {
-        // var xhr = new XMLHttpRequest();
-        // xhr.open("POST", "YourServiceForStoringSurveyResultsAsJSON_URL");
-        // xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
-        // xhr.send(JSON.stringify(sender.data));
-        console.log(sender.data);
+      $("#surveyElement").hide();
+      $("#report").show();
     });
+
+$("form#requestReport").submit(function(event) {
+  event.preventDefault();
+  $("form#requestReport button").prop('disabled', true);
+  $("form#requestReport .spinner-border").show();
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "https://survey.secureapp.io/api/response/");
+  xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+  xhr.setRequestHeader("x-api-key", "d91K6qUQqjkrdpDcp42VXoq26adCEDhGQ1btfegZ");
+  var response = {
+    email: $("form#requestReport #inputEmail1").val(),
+    responses: window.survey.data
+  };
+
+  xhr.onreadystatechange = function() { // Call a function when the state changes.
+    if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+      $("#report").hide();
+      $("#thanks").show();
+    }
+    if (this.readyState === XMLHttpRequest.DONE && this.status != 200) {
+      alert("Error submitting request: " + this.status);
+      $("form#requestReport button").prop('disabled', false);
+
+    }
+  }
+  xhr.send(JSON.stringify(response));
+});
 
 $("#surveyElement").Survey({model: survey});
 

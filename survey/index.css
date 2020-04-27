@@ -15,4 +15,9 @@ body {
 
 #circle {
   width: 200px;
+  margin: auto;
+}
+
+.score {
+  text-align: center;
 }

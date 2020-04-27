@@ -11,7 +11,10 @@ Globals:
     Timeout: 3
   Api:
     EndpointConfiguration: REGIONAL
-    Cors: "'*.secureapp.io'"
+    Cors:
+      AllowMethods: "'OPTIONS,POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
 
 Parameters:
   FunctionStage:
